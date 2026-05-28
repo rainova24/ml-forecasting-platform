@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediksi Saham BCA | ARIMA Model</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Hero Section -->
+    <section class="hero reveal">
+        <div class="container">
+            <h1>BCA Stock Prediction</h1>
+            <p>Implementasi Machine Learning Time Series menggunakan pendekatan Rolling Forecast ARIMA untuk memprediksi harga penutupan saham PT Bank Central Asia Tbk.</p>
+        </div>
+    </section>
+
+    <!-- Project Overview -->
+    <section class="overview">
+        <div class="container">
+            <h2 class="section-title reveal">Metodologi Eksperimen</h2>
+            <div class="grid-3">
+                <div class="glass-panel info-card reveal">
+                    <h3>1. Dataset</h3>
+                    <p>Menggunakan data historis harga saham BCA dari 22 April 2024 hingga 22 April 2026. Fokus pada variabel dependen: <strong>Harga Tutup</strong>. Total 477 baris data harian.</p>
+                </div>
+                <div class="glass-panel info-card reveal">
+                    <h3>2. Preprocessing & Uji ADF</h3>
+                    <p>Format waktu dinormalisasi. Melalui pengujian statistik Augmented Dickey-Fuller, terbukti data memiliki tren (P-Value 0.86). Solusinya: penerapan teknik <strong>Differencing (d > 0)</strong>.</p>
+                </div>
+                <div class="glass-panel info-card reveal">
+                    <h3>3. Hyperparameter Tuning</h3>
+                    <p>Menggunakan metode Grid Search mengevaluasi AIC terendah, arsitektur terbaik ditemukan pada konfigurasi <strong>ARIMA (4, 1, 2)</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results">
+        <div class="container">
+            <h2 class="section-title reveal">Kinerja Model & Evaluasi</h2>
+            <div class="glass-panel reveal" style="margin-bottom: 3rem;">
+                <h3 style="color: var(--accent-primary); margin-bottom: 1rem; text-align: center;">Mengapa Rolling Forecast?</h3>
+                <p style="text-align: center; color: var(--text-muted); max-width: 800px; margin: 0 auto;">Prediksi buta secara massal (*blind long-term forecast*) gagal menangkap volatilitas saham (MAE Rp 816). Namun dengan pendekatan <strong>One-step-ahead Rolling Forecast</strong> (model terus belajar hari demi hari), margin error ditekan drastis sebesar 88% menjadi hanya <strong>MAE Rp 95.14</strong>.</p>
+            </div>
+
+            <div class="glass-panel reveal">
+                <div class="chart-container">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Machine Learning Project - Tugas 8. All rights reserved.</p>
+    </footer>
+
+    <!-- Script Data yang digenerate oleh Python akan dimuat di sini -->
+    <script src="data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
