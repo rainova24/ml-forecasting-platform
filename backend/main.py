@@ -32,7 +32,9 @@ async def run_experiment(
     model_type: str = Form(...),
     target_col: str = Form(...),
     date_col: str = Form(...),
-    feature_cols: str = Form("") # Khusus MLR (pisahkan dengan koma)
+    feature_cols: str = Form(""),
+    time_resample: str = Form("none"), # Parameter baru: none, daily, weekly, monthly
+    missing_values: str = Form("drop") # Parameter baru: drop, mean
 ):
     try:
         # 1. Membaca CSV dari Upload Frontend
@@ -43,10 +45,58 @@ async def run_experiment(
         if date_col not in df.columns or target_col not in df.columns:
             return JSONResponse(status_code=400, content={"error": f"Kolom '{date_col}' atau '{target_col}' tidak ditemukan di CSV."})
             
+        # ==========================================
+        # 2. PREPROCESSING DINAMIS 
+        # ==========================================
+        
+        # A. Auto-Translate Bulan Indonesia ke Inggris untuk Pandas Datetime
+        bulan_indo = {
+            'Januari': 'January', 'Februari': 'February', 'Maret': 'March',
+            'Mei': 'May', 'Juni': 'June', 'Juli': 'July', 'Agustus': 'August',
+            'Oktober': 'October', 'Nopember': 'November', 'Desember': 'December'
+        }
+        
+        if df[date_col].dtype == 'object':
+            # Ignore case secara sederhana dengan replace per kata
+            for id_month, en_month in bulan_indo.items():
+                df[date_col] = df[date_col].str.replace(id_month, en_month, regex=False)
+                df[date_col] = df[date_col].str.replace(id_month.lower(), en_month, regex=False)
+                
         df[date_col] = pd.to_datetime(df[date_col])
         df.sort_values(date_col, inplace=True)
         
-        # Mengambil 80% Train, 20% Test
+        # Menjadikan Tanggal sebagai index untuk memudahkan proses Resampling
+        df.set_index(date_col, inplace=True)
+        
+        # B. Penanganan Missing Values Awal (Kolom Angka Saja)
+        num_cols = df.select_dtypes(include=[np.number]).columns
+        if missing_values == "mean":
+            df[num_cols] = df[num_cols].fillna(df[num_cols].mean())
+        else:
+            df.dropna(inplace=True)
+            
+        # C. Time Resampling Otomatis (Harian, Mingguan, Bulanan)
+        if time_resample == "daily":
+            df = df.resample('D').mean()
+        elif time_resample == "weekly":
+            df = df.resample('W').mean()
+        elif time_resample == "monthly":
+            df = df.resample('ME').mean() # Pandas 'ME' = Month End
+            
+        # D. Penanganan Missing Values Kedua (Efek Samping Resampling yang mungkin menghasilkan hari libur kosong)
+        if time_resample != "none":
+            if missing_values == "mean":
+                df = df.fillna(df.mean())
+            else:
+                df.dropna(inplace=True)
+                
+        # Kembalikan kolom Tanggal dari Index agar bisa dipakai algoritma
+        df.reset_index(inplace=True)
+        
+        # ==========================================
+        # 3. SPLITTING DATA (80% / 20%)
+        # ==========================================
+        
         training_len = int(np.ceil(len(df) * 0.8))
         train_df = df.iloc[:training_len].copy()
         test_df = df.iloc[training_len:].copy()
@@ -60,7 +110,7 @@ async def run_experiment(
         predictions = []
         
         # ==========================================
-        # LOGIKA PERCABANGAN 5 ALGORITMA
+        # 4. LOGIKA PERCABANGAN 5 ALGORITMA
         # ==========================================
         
         if model_type == "ARIMA":
@@ -71,14 +121,16 @@ async def run_experiment(
             predictions = forecast.tolist()
             
         elif model_type == "Holt-Winters":
-            # Additive HW
-            model = ExponentialSmoothing(y_train, trend='add', seasonal='add', seasonal_periods=21)
+            # Mematikan seasonal jika datanya terlalu sedikit akibat resampling bulanan
+            seasonal_opt = 'add' if len(y_train) > 42 else None
+            period_opt = 21 if seasonal_opt else None
+            
+            model = ExponentialSmoothing(y_train, trend='add', seasonal=seasonal_opt, seasonal_periods=period_opt)
             model_fit = model.fit()
             forecast = model_fit.forecast(len(y_test))
             predictions = forecast.tolist()
             
         elif model_type == "Prophet":
-            # Facebook Prophet
             prophet_train = train_df[[date_col, target_col]].rename(columns={date_col: 'ds', target_col: 'y'})
             prophet_test = test_df[[date_col]].rename(columns={date_col: 'ds'})
             model = Prophet(daily_seasonality=False, yearly_seasonality=True)
@@ -87,7 +139,6 @@ async def run_experiment(
             predictions = forecast['yhat'].tolist()
             
         elif model_type == "MLR":
-            # Multiple Linear Regression (Multivariate Time-Shifting)
             if not feature_cols:
                 return JSONResponse(status_code=400, content={"error": "Pilih minimal 1 fitur pendukung untuk MLR."})
                 
@@ -101,7 +152,6 @@ async def run_experiment(
             
             df_mlr.dropna(inplace=True)
             
-            # Re-split karena dropna
             train_len_mlr = int(np.ceil(len(df_mlr) * 0.8))
             X_cols = [f'{f}_X' for f in fitur_list]
             
@@ -110,7 +160,6 @@ async def run_experiment(
             X_test_mlr = df_mlr.iloc[train_len_mlr:][X_cols].values
             Y_test_mlr = df_mlr.iloc[train_len_mlr:]['Target_Y'].values
             
-            # Update Test Dates for chart (karena berkurang 1 baris di awal)
             test_dates = df_mlr.iloc[train_len_mlr:][date_col].dt.strftime('%Y-%m-%d').tolist()
             y_test = Y_test_mlr
             
@@ -120,22 +169,25 @@ async def run_experiment(
             predictions = preds.tolist()
             
         elif model_type == "LSTM":
-            # Deep Learning (Scaled)
             scaler = MinMaxScaler(feature_range=(0,1))
             scaled_data = scaler.fit_transform(df[[target_col]].values)
             
             train_data = scaled_data[:training_len]
             
-            # Buat struktur X_train, y_train (Window 60 hari)
+            # Menyesuaikan Window Size jika data terlalu sedikit akibat resampling
+            window_size = 60 if len(train_data) > 120 else 5
+            
             x_train_lstm, y_train_lstm = [], []
-            for i in range(60, len(train_data)):
-                x_train_lstm.append(train_data[i-60:i, 0])
+            for i in range(window_size, len(train_data)):
+                x_train_lstm.append(train_data[i-window_size:i, 0])
                 y_train_lstm.append(train_data[i, 0])
                 
+            if len(x_train_lstm) == 0:
+                return JSONResponse(status_code=400, content={"error": "Data terlalu sedikit untuk LSTM setelah Resampling."})
+
             x_train_lstm, y_train_lstm = np.array(x_train_lstm), np.array(y_train_lstm)
             x_train_lstm = np.reshape(x_train_lstm, (x_train_lstm.shape[0], x_train_lstm.shape[1], 1))
             
-            # Bangun Model Cepat (Hanya 5 Epoch agar API tidak Timeout kelamaan)
             model = Sequential([
                 Input(shape=(x_train_lstm.shape[1], 1)),
                 LSTM(50, return_sequences=True),
@@ -146,11 +198,10 @@ async def run_experiment(
             model.compile(optimizer='adam', loss='mean_squared_error')
             model.fit(x_train_lstm, y_train_lstm, batch_size=32, epochs=5, verbose=0)
             
-            # Buat Test Data
-            test_data_scaled = scaled_data[training_len - 60:]
+            test_data_scaled = scaled_data[training_len - window_size:]
             x_test_lstm = []
-            for i in range(60, len(test_data_scaled)):
-                x_test_lstm.append(test_data_scaled[i-60:i, 0])
+            for i in range(window_size, len(test_data_scaled)):
+                x_test_lstm.append(test_data_scaled[i-window_size:i, 0])
                 
             x_test_lstm = np.array(x_test_lstm)
             x_test_lstm = np.reshape(x_test_lstm, (x_test_lstm.shape[0], x_test_lstm.shape[1], 1))
@@ -163,13 +214,12 @@ async def run_experiment(
             return JSONResponse(status_code=400, content={"error": "Metode tidak dikenali."})
             
         # ==========================================
-        # KALKULASI METRIK
+        # 5. KALKULASI METRIK
         # ==========================================
         rmse = float(np.sqrt(mean_squared_error(y_test, predictions)))
         mae = float(mean_absolute_error(y_test, predictions))
         mape = float(mean_absolute_percentage_error(y_test, predictions) * 100)
         
-        # Kirim Balasan ke Web Frontend
         return {
             "status": "success",
             "model_type": model_type,
@@ -188,7 +238,6 @@ async def run_experiment(
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-# Menjalankan server (Untuk keperluan testing manual)
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

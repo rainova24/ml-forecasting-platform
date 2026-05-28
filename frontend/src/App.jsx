@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { UploadCloud, Activity, Database, Cpu, ChevronRight, Loader2, History } from 'lucide-react';
+import { UploadCloud, Activity, Database, Cpu, Settings2, Loader2, History } from 'lucide-react';
 
 function App() {
   const [file, setFile] = useState(null);
@@ -9,6 +9,10 @@ function App() {
   const [targetCol, setTargetCol] = useState('Close');
   const [dateCol, setDateCol] = useState('Date');
   const [featureCols, setFeatureCols] = useState('Open,High,Low,Volume');
+  
+  // State Baru untuk Preprocessing
+  const [timeResample, setTimeResample] = useState('none');
+  const [missingValues, setMissingValues] = useState('drop');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -38,19 +42,21 @@ function App() {
     formData.append('target_col', targetCol);
     formData.append('date_col', dateCol);
     
+    // Parameter Preprocessing Baru
+    formData.append('time_resample', timeResample);
+    formData.append('missing_values', missingValues);
+    
     if (modelType === 'MLR') {
       formData.append('feature_cols', featureCols);
     }
 
     try {
-      // Mengirim data ke Mesin Python (FastAPI) di Port 8000
       const response = await axios.post('http://127.0.0.1:8000/api/experiment', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
       const resData = response.data;
       
-      // Formatting Data untuk Grafik Recharts
       const chartData = resData.chart_data.dates.map((date, index) => ({
         date: date,
         Actual: resData.chart_data.actual[index],
@@ -106,9 +112,35 @@ function App() {
             </div>
           </div>
 
+          {/* KARTU BARU: TEKNIK PREPROCESSING */}
           <div className="glass-card">
             <h2 className="card-title">
-              <Cpu size={24} color="#a78bfa" /> 2. Parameter Model
+              <Settings2 size={24} color="#f59e0b" /> 2. Teknik Preprocessing
+            </h2>
+            <div className="form-group" style={{marginBottom: '1rem'}}>
+              <label>Time Resampling (Rekapitulasi Waktu)</label>
+              <select className="form-control" value={timeResample} onChange={e => setTimeResample(e.target.value)}>
+                <option value="none">Tanpa Resampling (Bawaan Dataset)</option>
+                <option value="daily">Rata-rata Harian (Daily)</option>
+                <option value="weekly">Rata-rata Mingguan (Weekly)</option>
+                <option value="monthly">Rata-rata Bulanan (Monthly)</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Penanganan Data Kosong (Missing Values)</label>
+              <select className="form-control" value={missingValues} onChange={e => setMissingValues(e.target.value)}>
+                <option value="drop">Hapus Baris yang Kosong (Drop NA)</option>
+                <option value="mean">Isi dengan Rata-rata (Mean Imputation)</option>
+              </select>
+            </div>
+            <div style={{marginTop: '1rem', padding: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', fontSize: '0.875rem', color: '#94a3b8'}}>
+              <span style={{color: '#60a5fa'}}>Info:</span> AI akan otomatis mendeteksi dan menerjemahkan penulisan nama bulan Indonesia (cth: "Juni") menjadi format waktu internasional.
+            </div>
+          </div>
+
+          <div className="glass-card">
+            <h2 className="card-title">
+              <Cpu size={24} color="#a78bfa" /> 3. Parameter Model
             </h2>
             <form onSubmit={handleRunExperiment} className="form-group">
               

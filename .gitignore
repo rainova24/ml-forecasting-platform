@@ -1,7 +1,7 @@
 node_modules/
 __pycache__/
 *.pkl
-*.json
+prophet_bca_model.json
 *.png
 .env
 .DS_Store
