@@ -17,6 +17,7 @@ function App() {
   const [featureCols, setFeatureCols] = useState('Open,High,Low,Volume');
   const [timeResample, setTimeResample] = useState('none');
   const [missingValues, setMissingValues] = useState('drop');
+  const [oneHotEncodeCols, setOneHotEncodeCols] = useState('');
   
   // ==========================================
   // STATE: TAB 2 (Pre-Trained Models)
@@ -75,6 +76,7 @@ function App() {
     formData.append('date_col', dateCol);
     formData.append('time_resample', timeResample);
     formData.append('missing_values', missingValues);
+    formData.append('one_hot_encode_cols', oneHotEncodeCols);
     if (modelType === 'MLR') {
       formData.append('feature_cols', featureCols);
     }
@@ -255,10 +257,17 @@ function App() {
                       <input type="text" className="form-control" value={dateCol} onChange={e => setDateCol(e.target.value)} />
                     </div>
                   </div>
+                  {(modelType === 'Prophet-Add-Regressor' || modelType === 'MLR') && (
+                    <div className="form-group" style={{marginBottom: '1rem'}}>
+                      <label>Kolom Kategori (One-Hot Encoding)</label>
+                      <input type="text" className="form-control" placeholder="Contoh: Kondisi_Mental, Cuaca" value={oneHotEncodeCols} onChange={e => setOneHotEncodeCols(e.target.value)} />
+                      <small style={{color: '#64748b'}}>*Wajib diisi untuk Prophet-Add-Regressor buatan Firman</small>
+                    </div>
+                  )}
                   {modelType === 'MLR' && (
                     <div className="form-group" style={{marginBottom: '1.5rem'}}>
-                      <label>Fitur Pendukung (Pisahkan dgn koma)</label>
-                      <input type="text" className="form-control" value={featureCols} onChange={e => setFeatureCols(e.target.value)} />
+                      <label>Fitur Pendukung Numerik</label>
+                      <input type="text" className="form-control" placeholder="Contoh: Open,High,Low" value={featureCols} onChange={e => setFeatureCols(e.target.value)} />
                     </div>
                   )}
                   <button type="submit" className="btn-primary" disabled={loading}>
