@@ -226,7 +226,7 @@ function App() {
 
       <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem'}}>
         {/* PANEL KIRI: KONFIGURASI SESUAI TAB AKTIF */}
-        <div>
+        <div style={{minWidth: 0}}>
           
           {/* ============== TAB 1: AUTO TRAINING ============== */}
           {activeTab === 'auto' && (
@@ -381,7 +381,7 @@ function App() {
                 </h2>
                 <div className="form-group" style={{marginBottom: '1rem'}}>
                   <label>Skema Input yang Dibutuhkan</label>
-                  <div style={{background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem', fontFamily: 'monospace', color: '#a78bfa'}}>
+                  <div style={{background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem', fontFamily: 'monospace', color: '#a78bfa', whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
                     {availableModels.find(m => m.name === selectedModel)?.input_schema ? JSON.stringify(availableModels.find(m => m.name === selectedModel).input_schema) : "Belum ada skema metadata.json."}
                   </div>
                 </div>
@@ -398,7 +398,7 @@ function App() {
                 {ptJsonOutput && (
                   <div style={{marginTop: '1.5rem'}}>
                     <label style={{color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem'}}><Activity size={16}/> Inferensi Berhasil</label>
-                    <pre style={{background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', overflowX: 'auto', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '0.875rem', border: '1px solid #334155'}}>
+                    <pre style={{background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', overflowX: 'auto', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '0.875rem', border: '1px solid #334155', whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>
                       {JSON.stringify(ptJsonOutput, null, 2)}
                     </pre>
                   </div>
@@ -410,7 +410,7 @@ function App() {
         </div>
 
         {/* PANEL KANAN: HASIL VISUALISASI (Global untuk kedua tab) */}
-        <div>
+        <div style={{minWidth: 0}}>
           {currentResult ? (
             <div className="glass-card" style={{height: '100%'}}>
               <h2 className="card-title">
