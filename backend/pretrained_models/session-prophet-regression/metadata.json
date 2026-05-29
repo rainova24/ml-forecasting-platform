@@ -1,0 +1,19 @@
+{
+    "description": "Facebook Prophet model untuk memprediksi estimasi waktu (dalam menit) sesi aktivitas harian berdasarkan tanggal (tren & musiman) dan kategori aktivitas yang direncanakan.",
+    "model_type": "Prophet",
+    "input_schema": {
+        "type": "object",
+        "description": "Representasi fitur regressor yang berisi tanggal target dan one-hot encoded kategori aktivitas.",
+        "example": {
+            "ds": "2026-06-01",
+            "cat_Burnout": 0,
+            "cat_Interrupted": 0,
+            "cat_Learning": 1,
+            "cat_Normal": 0
+        }
+    },
+    "output_schema": {
+        "type": "number",
+        "description": "Prediksi nilai menit (yhat) dalam skala aslinya."
+    }
+}
