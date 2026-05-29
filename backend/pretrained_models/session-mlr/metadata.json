@@ -1,0 +1,37 @@
+{
+    "description": "Multiple Linear Regression (MLR) model predicting drawing session minutes based on a 14-day history, planned category, and day of the week.",
+    "model_type": "MLR",
+    "input_schema": {
+        "type": "array",
+        "description": "Flat list of numerical features representing the 14 lag days followed by one-hot encoded boolean values for 'category' and 'day_of_week'.",
+        "example": [
+            45,
+            50,
+            42,
+            60,
+            47,
+            40,
+            20,
+            10,
+            45,
+            60,
+            60,
+            50,
+            40,
+            45,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "output_schema": {
+        "type": "array",
+        "description": "Predicted session duration in minutes"
+    }
+}

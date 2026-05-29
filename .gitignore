@@ -1,6 +1,7 @@
 node_modules/
 __pycache__/
 *.pkl
+*.keras
 prophet_bca_model.json
 *.png
 .env

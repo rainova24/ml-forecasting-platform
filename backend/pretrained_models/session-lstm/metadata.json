@@ -1,0 +1,36 @@
+{
+    "description": "Model Dual-Input Neural Network (LSTM + Dense) untuk memprediksi estimasi waktu (dalam menit) sesi aktivitas harian berdasarkan sekuens riwayat durasi 14 hari terakhir dan konteks fitur statis (hari serta kategori aktivitas) yang direncanakan.",
+    "model_type": "Dual-Input LSTM",
+    "input_schema": {
+        "type": "object",
+        "description": "Representasi input ganda yang terdiri dari riwayat durasi menit selama 14 hari ke belakang (untuk LSTM) dan fitur statis saat ini berupa hari serta kategori aktivitas yang telah di-one-hot encode (untuk Dense layer).",
+        "example": {
+            "past_14_days_minutes": [
+                60,
+                45,
+                30,
+                90,
+                120,
+                60,
+                0,
+                45,
+                60,
+                75,
+                90,
+                30,
+                45,
+                60
+            ],
+            "static_features": {
+                "day_of_week": 1,
+                "category_Interrupted": 0,
+                "category_Learning": 1,
+                "category_Normal": 0
+            }
+        }
+    },
+    "output_schema": {
+        "type": "number",
+        "description": "Prediksi nilai durasi sesi aktivitas dalam satuan menit setelah dilakukan proses inverse scaling ke skala aslinya."
+    }
+}
