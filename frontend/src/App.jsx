@@ -28,6 +28,8 @@ function App() {
   const [ptTargetCol, setPtTargetCol] = useState('Close');
   const [ptDateCol, setPtDateCol] = useState('Date');
   const [testSize, setTestSize] = useState(0.2);
+  const [ptJsonInput, setPtJsonInput] = useState('');
+  const [ptJsonOutput, setPtJsonOutput] = useState(null);
 
   // ==========================================
   // GLOBAL STATE
@@ -156,6 +158,38 @@ function App() {
       setHistory(prev => [resultObj, ...prev]);
     } catch (err) {
       setError(err.response?.data?.error || "Gagal menguji Pre-Trained model.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // EKSEKUSI TAB 2 (PRE-TRAINED PREDICT JSON)
+  const handleRunJsonPrediction = async (e) => {
+    e.preventDefault();
+    if (!selectedModel) {
+      setError("Pilih model terlebih dahulu.");
+      return;
+    }
+    try {
+      let parsedInput;
+      try {
+        parsedInput = JSON.parse(ptJsonInput);
+      } catch (e) {
+        setError("Format JSON tidak valid. Pastikan penulisan menggunakan kutip ganda (\"\").");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      setPtJsonOutput(null);
+      
+      const response = await axios.post('http://127.0.0.1:8000/api/pretrained/predict', {
+        model_name: selectedModel,
+        input: parsedInput
+      });
+      setPtJsonOutput(response.data);
+    } catch (err) {
+      setError(err.response?.data?.error || "Gagal menjalankan prediksi JSON.");
     } finally {
       setLoading(false);
     }
@@ -339,6 +373,36 @@ function App() {
                     {loading ? 'Menguji Model...' : 'Uji Akurasi Model Ini'}
                   </button>
                 </form>
+              </div>
+
+              <div className="glass-card" style={{marginTop: '2rem'}}>
+                <h2 className="card-title">
+                  <Cpu size={24} color="#a78bfa" /> 3. Prediksi Satuan (JSON Input)
+                </h2>
+                <div className="form-group" style={{marginBottom: '1rem'}}>
+                  <label>Skema Input yang Dibutuhkan</label>
+                  <div style={{background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', fontSize: '0.875rem', fontFamily: 'monospace', color: '#a78bfa'}}>
+                    {availableModels.find(m => m.name === selectedModel)?.input_schema ? JSON.stringify(availableModels.find(m => m.name === selectedModel).input_schema) : "Belum ada skema metadata.json."}
+                  </div>
+                </div>
+                <form onSubmit={handleRunJsonPrediction}>
+                  <div className="form-group" style={{marginBottom: '1rem'}}>
+                    <label>Input Data (JSON)</label>
+                    <textarea className="form-control" rows="6" value={ptJsonInput} onChange={e => setPtJsonInput(e.target.value)} placeholder='Contoh: {"ds": "2026-06-01", "cat_Learning": 1}' style={{fontFamily: 'monospace'}}></textarea>
+                  </div>
+                  <button type="submit" className="btn-primary" disabled={loading || availableModels.length === 0} style={{background: '#a78bfa'}}>
+                    {loading ? <Loader2 className="loader" size={20} /> : <Activity size={20} />}
+                    {loading ? 'Memproses JSON...' : 'Jalankan Prediksi JSON'}
+                  </button>
+                </form>
+                {ptJsonOutput && (
+                  <div style={{marginTop: '1.5rem'}}>
+                    <label style={{color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem'}}><Activity size={16}/> Inferensi Berhasil</label>
+                    <pre style={{background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', overflowX: 'auto', color: '#e2e8f0', fontFamily: 'monospace', fontSize: '0.875rem', border: '1px solid #334155'}}>
+                      {JSON.stringify(ptJsonOutput, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
             </>
           )}
