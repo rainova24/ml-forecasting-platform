@@ -1,0 +1,11 @@
+{
+    "description": "Model Facebook Prophet yang handal mendeteksi musim (seasonality) dan tren (trend) pada harga BCA.",
+    "model_type": "Prophet",
+    "input_schema": {
+        "type": "object",
+        "description": "Tanggal target yang ingin diprediksi",
+        "example": {
+            "ds": "2026-06-01"
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "description": "Model ARIMA (AutoRegressive Integrated Moving Average) untuk prediksi runtun waktu saham BCA.",
+    "model_type": "ARIMA",
+    "input_schema": {
+        "type": "object",
+        "description": "Jumlah langkah ke depan (steps) yang ingin diprediksi.",
+        "example": {
+            "steps": 1
+        }
+    }
+}

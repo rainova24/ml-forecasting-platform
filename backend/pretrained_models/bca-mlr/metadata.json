@@ -1,0 +1,19 @@
+{
+    "description": "Model Regresi Linear Berganda memprediksi harga Close BCA berdasarkan harga Open, High, dan Low dari hari sebelumnya.",
+    "model_type": "MLR",
+    "input_schema": {
+        "type": "array",
+        "description": "Array berisi 3 angka: [Open_kemarin, High_kemarin, Low_kemarin]",
+        "example": [
+            [
+                9200,
+                9300,
+                9150
+            ]
+        ]
+    },
+    "output_schema": {
+        "type": "array",
+        "description": "Prediksi harga Close"
+    }
+}

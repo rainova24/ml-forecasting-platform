@@ -1,0 +1,11 @@
+{
+    "description": "Model Holt-Winters (Exponential Smoothing) untuk menangkap tren harga saham BCA.",
+    "model_type": "Holt-Winters",
+    "input_schema": {
+        "type": "object",
+        "description": "Jumlah langkah ke depan (steps) yang ingin diprediksi.",
+        "example": {
+            "steps": 1
+        }
+    }
+}
