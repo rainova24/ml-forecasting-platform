@@ -70,7 +70,7 @@ async def run_experiment(
                 df[date_col] = df[date_col].str.replace(id_month, en_month, regex=False)
                 df[date_col] = df[date_col].str.replace(id_month.lower(), en_month, regex=False)
                 
-        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, format='mixed')
         df.sort_values(date_col, inplace=True)
         
         # Menjadikan Tanggal sebagai index untuk memudahkan proses Resampling
@@ -552,7 +552,7 @@ async def evaluate_pretrained_with_dataset(
                 df[date_col] = df[date_col].str.replace(id_month, en_month, regex=False)
                 df[date_col] = df[date_col].str.replace(id_month.lower(), en_month, regex=False)
 
-        df[date_col] = pd.to_datetime(df[date_col])
+        df[date_col] = pd.to_datetime(df[date_col], dayfirst=True, format='mixed')
         df.sort_values(date_col, inplace=True)
         df.dropna(subset=[target_col], inplace=True)
         df.reset_index(drop=True, inplace=True)
